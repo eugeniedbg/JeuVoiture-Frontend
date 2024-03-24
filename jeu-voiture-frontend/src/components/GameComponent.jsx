@@ -1,16 +1,17 @@
+// GameComponent.jsx
 import React, { useEffect, useState } from 'react';
 import CarComponent from './CarComponent';
 import FruitComponent from './FruitComponent';
 import TreeComponent from './TreeComponent';
 import '../GameComponent.css';
 
-const Game = () => {
+const Game = ({ setScore }) => {
   const [bonuses, setBonuses] = useState([]);
   const [maluses, setMaluses] = useState([]);
   const [carPosition, setCarPosition] = useState(null);
-  const [score, setScore] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
-  const [carRotation, setCarRotation] = useState(0); // Nouvel état pour stocker la rotation de la voiture
+  const [carRotation, setCarRotation] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -41,24 +42,30 @@ const Game = () => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []); // L'effet ne s'exécute qu'une seule fois au montage du composant
+  }, [gameStarted]);
 
   const moveCar = async (direction) => {
     try {
       const response = await fetch(`http://localhost:8080/game/commande/${direction}`);
       const newData = await response.json();
       console.log('New data:', newData);
+      // Vérifie si le jeu est terminé
+      const gameResult = newData.find(item => item.Game);
+      console.log('Game result:', gameResult);
+      if (gameResult && gameResult.Game === "Jeux terminé") {
+        setGameOver(true);
+      }
       const positionCarData = newData.find(item => item.Car); 
 
-      setBonuses(newData.filter(item => item.Bonus)); // Mise à jour des bonus
-      setMaluses(newData.filter(item => item.Malus)); // Mise à jour des malus
-      setCarPosition({ x: positionCarData.x, y: positionCarData.y }); // Mise à jour de la position de la voiture
+      setBonuses(newData.filter(item => item.Bonus));
+      setMaluses(newData.filter(item => item.Malus));
+      setCarPosition({ x: positionCarData.x, y: positionCarData.y });
       setScore(newData.find(item => item.Score).score); // Mise à jour du score
+
     } catch (error) {
       console.error('Error moving car:', error);
     }
   };
-
 
   const startGame = async () => {
     try {
@@ -69,35 +76,31 @@ const Game = () => {
       const data = await response.json();
       console.log('Game started:', data);
       const positionCarData = data.find(item => item.Car); 
-      console.log('positionCarData:', positionCarData);
       const scoreData = data.find(item => item.Score); 
-      console.log(data);
-      console.log('log : ',data.filter(item => item.Bonus));
-      const bonus = data.filter(item => item.Bonus);
-      for (let i = 0; i < bonus.length; i++) {
-        console.log('bonus : ',bonus[i].x,bonus[i].y)
-        bonuses.push({x:bonus[i].x,y:bonus[i].y,type:bonus[i].type})
-      }
-      console.log('list bonus : ',bonuses)
-      //setBonuses(data.filter(item => item.Bonus)); // Filtrer uniquement les bonus
-      console.log('Bonuses:', bonuses);
-      setMaluses(data.filter(item => item.Malus)); // Filtrer uniquement les malus
 
+      setBonuses(data.filter(item => item.Bonus));
+      setMaluses(data.filter(item => item.Malus));
       setCarPosition({ x: positionCarData.x, y: positionCarData.y });
-      setScore(scoreData.score);
+      setScore(scoreData.score); // Initialisation du score
       setGameStarted(true);
+      setGameOver(false); // Réinitialiser le statut du jeu terminé
     } catch (error) {
       console.error('Error starting game:', error);
     }
   };
 
+  const restartGame = () => {
+    setGameOver(false); // Réinitialise l'état de fin de partie
+    startGame(); // Recommencer le jeu
+  }
 
   return (
     <div className="Game">
-      {!gameStarted && <button onClick={startGame}>Start game</button>}
+      {!gameStarted && !gameOver && <button onClick={startGame}>Start game</button>}
+      {gameOver && <button onClick={restartGame}>Recommencer la partie</button>}
       {carPosition !== null && <CarComponent x={carPosition.x} y={carPosition.y} rotation={carRotation} />} 
       {bonuses.map((bonus, index) => (
-      <FruitComponent key={index} x={bonus.x} y={bonus.y} type={bonus.type} />
+        <FruitComponent key={index} x={bonus.x} y={bonus.y} type={bonus.type} />
       ))}
       {maluses.map((malus, index) => (
         <TreeComponent key={index} x={malus.x} y={malus.y} type={malus.type} />
