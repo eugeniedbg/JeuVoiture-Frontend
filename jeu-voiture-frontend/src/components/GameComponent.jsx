@@ -12,6 +12,7 @@ const Game = ({ setScore }) => {
   const [gameStarted, setGameStarted] = useState(false);
   const [carRotation, setCarRotation] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const [gameResultMessage, setGameResultMessage] = useState('');
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -52,8 +53,9 @@ const Game = ({ setScore }) => {
       // Vérifie si le jeu est terminé
       const gameResult = newData.find(item => item.Game);
       console.log('Game result:', gameResult);
-      if (gameResult && gameResult.Game === "Jeux terminé") {
+      if (gameResult && gameResult.Game !== "Encour") {
         setGameOver(true);
+        setGameResultMessage(gameResult.Game); // Met à jour le message de fin de partie
       }
       const positionCarData = newData.find(item => item.Car); 
 
@@ -91,13 +93,19 @@ const Game = ({ setScore }) => {
 
   const restartGame = () => {
     setGameOver(false); // Réinitialise l'état de fin de partie
+    setGameResultMessage(''); // Réinitialise le message de fin de partie
     startGame(); // Recommencer le jeu
   }
 
   return (
     <div className="Game">
       {!gameStarted && !gameOver && <button onClick={startGame}>Start game</button>}
-      {gameOver && <button onClick={restartGame}>Recommencer la partie</button>}
+      {gameOver && (
+        <>
+          <p className="gameResultMessage">{gameResultMessage}</p>
+          <button onClick={restartGame}>Recommencer la partie</button>
+        </>
+      )}
       {carPosition !== null && <CarComponent x={carPosition.x} y={carPosition.y} rotation={carRotation} />} 
       {bonuses.map((bonus, index) => (
         <FruitComponent key={index} x={bonus.x} y={bonus.y} type={bonus.type} />
@@ -106,7 +114,7 @@ const Game = ({ setScore }) => {
         <TreeComponent key={index} x={malus.x} y={malus.y} type={malus.type} />
       ))}
     </div>
-  );
+  );  
 };
 
 export default Game;

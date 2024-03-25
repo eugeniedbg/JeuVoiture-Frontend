@@ -2,6 +2,7 @@
 import React from 'react';
 import bananeImage from '../images/banane.png';
 import kiwiImage from '../images/kiwi.png';
+import pommeImage from '../images/pomme.png';
 
 const FruitComponent = ({ type, x, y }) => {
   let fruitImage;
@@ -12,6 +13,9 @@ const FruitComponent = ({ type, x, y }) => {
       break;
     case 2:
       fruitImage = kiwiImage;
+      break;
+    case 3:
+      fruitImage = pommeImage;
       break;
     default:
       fruitImage = kiwiImage;
